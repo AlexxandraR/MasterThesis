@@ -1,0 +1,7 @@
+q0
+ac,q0->q1
+bd,q0->q1
+ac,q1->q0
+bdq1->q0
+q1
+q0
