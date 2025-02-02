@@ -63,22 +63,44 @@ public class Main {
         FileRead f = new FileRead();
         String msg = f.readText(fileName, automaton);
         if(msg == null){
-            System.out.println("\n NFA");
-            automaton.printNFA();
-            System.out.println("\n DFA");
+//            System.out.println("\n NFA");
+//            automaton.printNFA();
+//            System.out.println("\n DFA");
             DFA dfa = automaton.toDFA();
-            dfa.printDFA();
+//            dfa.printDFA();
 //            dfa = dfa.minimize().completeDFA();
 //            System.out.println("\n Minimaze");
 //            dfa.printDFA();
 //            System.out.println(dfa.isComplete());
 //            dfa.completeDFA().printDFA();
 
-//            System.out.println(dfa.isPermutation());
+//            System.out.println(dfa.isCommutative());
 //            System.out.println("\n Algorithm");
 //            System.out.println(dfa.isPrimeDFA());
 
-            System.out.println(dfa.isComposite());
+//            System.out.println(dfa.isCompositeTime());
+
+//            long startTime = System.nanoTime();
+//
+//            System.out.println(dfa.isCompositeTime());
+//
+//            long endTime = System.nanoTime();
+//            double executionTime = (endTime - startTime) / 1e6;
+//
+//            System.out.printf("%.6f%n", executionTime);
+
+            for (int i = 0; i < 55; i++) {
+
+                long startTime = System.nanoTime();
+
+                dfa.isCompositeMemory();
+
+                long endTime = System.nanoTime();
+                double executionTime = (endTime - startTime) / 1e6;
+
+                System.out.printf("%.6f%n", executionTime);
+
+            }
 
         }
         else{

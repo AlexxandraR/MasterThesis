@@ -43,6 +43,13 @@ public class DFA {
         }
     }
 
+    private List<String> getNonAcceptingStates(){
+        return this.states.stream()
+                .filter(state -> !this.acceptStates.contains(state))
+                .distinct()
+                .toList();
+    }
+
 //---------------------------------------------Minimal automaton -------------------------------------------------------
 
     /**
@@ -744,12 +751,9 @@ public class DFA {
      * @return true if the automaton is composite, false otherwise.
      */
     public boolean isCompositeMemory() {
-        List<String> nonAcceptStates = this.states.stream()
-                .filter(state -> !this.acceptStates.contains(state))
-                .distinct()
-                .toList();
+        List<String> nonAcceptStates = this.getNonAcceptingStates();
 
-        if (nonAcceptStates.size() <= 2) {
+        if (nonAcceptStates.size() <= 1) {
             return false;
         }
 
@@ -775,11 +779,12 @@ public class DFA {
      * @param covered Set of covered states.
      * @return true if all non-accept states are covered, false otherwise.
      */
-    private boolean generateCombinationMemory(List<String> nonAcceptStates, int size, int index, Set<String> current, Set<Set<String>> processedOrbits, Set<String> covered) {
+    private boolean generateCombinationMemory(List<String> nonAcceptStates, int size, int index, Set<String> current,
+                                              Set<Set<String>> processedOrbits, Set<String> covered) {
         if (current.size() == size) {
             if (!processedOrbits.contains(current)) {
                 covered.addAll(coverMemory(new HashSet<>(current), processedOrbits));
-                return covered.containsAll(nonAcceptStates);
+                return covered.size() == nonAcceptStates.size();
             }
             return false;
         }
@@ -805,7 +810,8 @@ public class DFA {
         Set<Set<String>> CU = new HashSet<>();
         CU.add(U);
 
-        if (expandOrbitsMemory(CU, processedOrbits) && CU.stream().anyMatch(subset -> subset.contains(this.getInitialState()))) {
+        if (expandOrbitsMemory(CU, processedOrbits) && CU.stream().anyMatch(subset -> subset
+                .contains(this.getInitialState()))) {
             return CU.stream()
                     .filter(subset -> subset.stream().noneMatch(this.acceptStates::contains))
                     .flatMap(Set::stream)
@@ -822,23 +828,21 @@ public class DFA {
      * @return true if expansion completes successfully, false otherwise.
      */
     private boolean expandOrbitsMemory(Set<Set<String>> CU, Set<Set<String>> processedOrbits) {
-        Set<Set<String>> newSets = new HashSet<>(CU);
+        Set<Set<String>> addedSets = new HashSet<>(CU);
 
         while (true) {
-            Set<Set<String>> addedSets = newSets.stream()
+            addedSets = addedSets.stream()
                     .flatMap(S -> this.getAlphabet().stream()
                             .map(sigma -> S.stream()
-                                    .map(state -> this.getTransitionFunction().getOrDefault(Map.of(state, sigma), null))
+                                    .map(state -> this.getTransitionFunction().getOrDefault(Map.of(state, sigma),
+                                            null))
                                     .filter(Objects::nonNull)
                                     .collect(Collectors.toSet())))
                     .filter(set -> !set.isEmpty())
                     .collect(Collectors.toSet());
 
             processedOrbits.addAll(addedSets);
-            if (CU.containsAll(addedSets)) break;
-
-            CU.addAll(addedSets);
-            newSets = new HashSet<>(addedSets);
+            if (!CU.addAll(addedSets)) break;
 
             if (CU.size() >= this.getStates().size()) {
                 return false;
@@ -856,12 +860,9 @@ public class DFA {
      * @return true if the automaton is composite, false otherwise.
      */
     public boolean isCompositeTime() {
-        List<String> nonAcceptStates = this.states.stream()
-                .filter(state -> !this.acceptStates.contains(state))
-                .distinct()
-                .toList();
+        List<String> nonAcceptStates = this.getNonAcceptingStates();
 
-        if (nonAcceptStates.size() <= 2) {
+        if (nonAcceptStates.size() <= 1) {
             return false;
         }
 
@@ -885,10 +886,11 @@ public class DFA {
      * @param covered The set of covered states.
      * @return true if all non-accepting states are covered, false otherwise.
      */
-    private boolean generateCombinationTime(List<String> nonAcceptStates, int size, int index, Set<String> current, Set<String> covered) {
+    private boolean generateCombinationTime(List<String> nonAcceptStates, int size, int index, Set<String> current,
+                                            Set<String> covered) {
         if (current.size() == size) {
             covered.addAll(coverTime(new HashSet<>(current)));
-            return covered.containsAll(nonAcceptStates);
+            return covered.size() == nonAcceptStates.size();
         }
 
         for (int i = index; i < nonAcceptStates.size(); i++) {
@@ -922,28 +924,27 @@ public class DFA {
 
     /**
      * Expands the given set of state subsets based on transitions, ensuring that all possible reachable states
-     * are considered. Stops expansion if the number of covered states reaches the total number of states in the automaton.
+     * are considered. Stops expansion if the number of covered states reaches the total number of states in the
+     * automaton.
      *
      * @param CU The set of subsets to be expanded.
      * @return true if expansion is successful, false if it reaches the full set of states.
      */
     private boolean expandOrbitsTime(Set<Set<String>> CU) {
-        Set<Set<String>> newSets = new HashSet<>(CU);
+        Set<Set<String>> addedSets = new HashSet<>(CU);
 
         while (true) {
-            Set<Set<String>> addedSets = newSets.stream()
+            addedSets = addedSets.stream()
                     .flatMap(S -> this.getAlphabet().stream()
                             .map(sigma -> S.stream()
-                                    .map(state -> this.getTransitionFunction().getOrDefault(Map.of(state, sigma), null))
+                                    .map(state -> this.getTransitionFunction().getOrDefault(Map.of(state, sigma),
+                                            null))
                                     .filter(Objects::nonNull)
                                     .collect(Collectors.toSet())))
                     .filter(set -> !set.isEmpty())
                     .collect(Collectors.toSet());
 
-            if (CU.containsAll(addedSets)) break;
-
-            CU.addAll(addedSets);
-            newSets = new HashSet<>(addedSets);
+            if (!CU.addAll(addedSets)) break;
 
             if (CU.size() >= this.getStates().size()) {
                 return false;
@@ -962,12 +963,9 @@ public class DFA {
      * @return true if the automaton is composite, false otherwise.
      */
     public boolean isComposite() {
-        List<String> nonAcceptStates = this.states.stream()
-                .filter(state -> !this.acceptStates.contains(state))
-                .distinct()
-                .toList();
+        List<String> nonAcceptStates = this.getNonAcceptingStates();
 
-        if (nonAcceptStates.size() <= 2) {
+        if (nonAcceptStates.size() <= 1) {
             return false;
         }
 
@@ -975,7 +973,7 @@ public class DFA {
             int flag = 0;
             List<String> filteredStates = new ArrayList<>(nonAcceptStates);
             filteredStates.remove(p);
-            for (int size = 2; size <= filteredStates.size(); size++) {
+            for (int size = 2; size <= nonAcceptStates.size(); size++) {
                 if (generateCombination(filteredStates, size, 0, new HashSet<>(Set.of(p))) == 1) {
                     flag = 1;
                     break;
@@ -989,7 +987,8 @@ public class DFA {
     }
 
     /**
-     * Recursively generates combinations of non-accepting states and checks if any subset satisfies the cover condition.
+     * Recursively generates combinations of non-accepting states and checks if any subset satisfies the cover
+     * condition.
      *
      * @param nonAcceptStates List of non-accepting states.
      * @param size The target size of the subset to generate.
@@ -1024,10 +1023,7 @@ public class DFA {
         Set<Set<String>> CU = new HashSet<>();
         CU.add(U);
 
-        if (expandOrbits(CU) && CU.stream().anyMatch(subset -> subset.contains(this.getInitialState()))) {
-            return true;
-        }
-        return false;
+        return expandOrbits(CU) && CU.stream().anyMatch(subset -> subset.contains(this.getInitialState()));
     }
 
     /**
@@ -1038,22 +1034,20 @@ public class DFA {
      * @return true if the expansion remains within bounds, false if all states are covered.
      */
     private boolean expandOrbits(Set<Set<String>> CU) {
-        Set<Set<String>> newSets = new HashSet<>(CU);
+        Set<Set<String>> addedSets = new HashSet<>(CU);
 
         while (true) {
-            Set<Set<String>> addedSets = newSets.stream()
+            addedSets = addedSets.stream()
                     .flatMap(S -> this.getAlphabet().stream()
                             .map(sigma -> S.stream()
-                                    .map(state -> this.getTransitionFunction().getOrDefault(Map.of(state, sigma), null))
+                                    .map(state -> this.getTransitionFunction().getOrDefault(Map.of(state, sigma),
+                                            null))
                                     .filter(Objects::nonNull)
                                     .collect(Collectors.toSet())))
                     .filter(set -> !set.isEmpty())
                     .collect(Collectors.toSet());
 
-            if (CU.containsAll(addedSets)) break;
-
-            CU.addAll(addedSets);
-            newSets = new HashSet<>(addedSets);
+            if (!CU.addAll(addedSets)) break;
 
             if (CU.size() >= this.getStates().size()) {
                 return false;
