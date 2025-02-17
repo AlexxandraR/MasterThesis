@@ -151,6 +151,7 @@ public class Automaton {
             Set<String> state = qList.get(0);
             qDone.add(state);
             qList.remove(0);
+            alphabet.remove("");
 
             for (String symbol : alphabet) {
                 List<String> transitions = new ArrayList<>();

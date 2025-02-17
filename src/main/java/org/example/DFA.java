@@ -382,7 +382,7 @@ public class DFA {
         return true;
     }
 
-//--------------------------------------------isPrime_algorithm1--------------------------------------------------------
+//--------------------------------------------isPrime_general_algorithm-------------------------------------------------
 
     /**
      * Generates all possible deterministic finite automata (DFAs) with a given number of states.

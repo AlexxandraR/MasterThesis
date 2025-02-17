@@ -7,7 +7,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class FileRead {
+/**
+ * The FileReader class implements reading an automaton from a file and was inspired
+ * by the FORKLIFT project available on GitHub.
+ *
+ * @see <a href="https://github.com/Mazzocchi/FORKLIFT/blob/master/program/automata/AutomatonParser.java">FORKLIFT</a>
+ */
+
+public class FileReader {
 
     /**
      * Parses the file into an automaton.

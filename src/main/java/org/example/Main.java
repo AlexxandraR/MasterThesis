@@ -1,72 +1,161 @@
 package org.example;
 
-import java.io.IOException;
 import java.util.*;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
-//        int numStates = 6;
-//        Set<String> alphabet = new HashSet<>(Arrays.asList("a", "b", "c"));
-//        List<String> states = new ArrayList<>();
-//
-//        // Generujeme stavy q0, q1, ..., q5
-//        for (int i = 0; i < numStates; i++) {
-//            states.add("q" + i);
-//        }
-//
-//        // Generujeme všetky permutácie stavov
-//        List<List<String>> statePermutations = generatePermutations(states);
-//
-//        // Iterujeme cez permutácie stavov pre každé písmeno
-//        for (List<String> aPerm : statePermutations) {
-//            for (List<String> bPerm : statePermutations) {
-//                for (List<String> cPerm : statePermutations) {
-//                    //for (List<String> dPerm : statePermutations) {
-//                        // Vytvorenie prechodovej funkcie
-//                        Map<Map<String, String>, String> transitionFunction = new HashMap<>();
-//                        addTransitions(transitionFunction, states, "a", aPerm);
-//                        addTransitions(transitionFunction, states, "b", bPerm);
-//                        addTransitions(transitionFunction, states, "c", cPerm);
-////                        addTransitions(transitionFunction, states, "d", dPerm);
-//
-//                        // Nastavenie počiatočného stavu a akceptačných stavov
-//                        String initialState = "q0";
-//                        Set<String> acceptStates = new HashSet<>();
-//                        acceptStates.add("q" + (numStates - 1)); // Posledný stav ako akceptačný
-//
-//                        // Vytvorenie DFA
-//                        DFA dfa = new DFA(new HashSet<>(states), alphabet, initialState, acceptStates, transitionFunction);
-//
-//                        // Overenie, či je composite
-//                        dfa = dfa.minimize();
-//                        dfa = dfa.completeDFA();
-//                        if(dfa.isPermutation()) {
-//                            boolean composite = dfa.isComposite();
-//                            // Výstup výsledkov
-//                            if(composite){
-//                                System.out.println("Transition Function: " + transitionFunction);
-//                                System.out.println("Initial State: " + initialState);
-//                                System.out.println("Accept States: " + acceptStates);
-//                                System.out.println("Is Composite: " + composite);
-//                                System.out.println("===================================");
-//                            }
-//                        }
-//                        // Ďalší automat sa generuje iteratívne
-//                   //}
-//                }
-//            }
-//        }
+        FileReader f = new FileReader();
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.println("\n Select an operation:");
+            System.out.println("1 - Is the automaton deterministic?");
+            System.out.println("2 - Convert the automaton to a deterministic one.");
+            System.out.println("3 - Minimize the automaton");
+            System.out.println("4 - Is the automaton complete?");
+            System.out.println("5 - Make the automaton complete");
+            System.out.println("6 - Is the automaton permutation?");
+            System.out.println("7 - Is the automaton commutative?");
+            System.out.println("8 - Is the automaton prime? - General algorithm");
+            System.out.println("9 - Is the automaton composite? - Basic algorithm for permutation DFAs");
+            System.out.println("10 - Is the automaton composite? - Algorithm for permutation DFAs " +
+                    "with saved processed states");
+            System.out.println("11 - Is the automaton composite? - Algorithm for permutation DFAs " +
+                    "with saved processed orbit-DFAs states");
+            System.out.println("100 - Exit application");
+            System.out.print("Enter your choice: ");
 
-        String fileName = "automaton18.txt";
-        Automaton automaton = new Automaton();
-        FileRead f = new FileRead();
-        String msg = f.readText(fileName, automaton);
-        if(msg == null){
+            int choice;
+            try {
+                choice = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                continue;
+            }
+
+            if (choice == 100) {
+                System.out.println("\nExiting application.");
+                break;
+            }
+
+            System.out.print("Enter the file path: ");
+            String filePath = scanner.nextLine();
+            System.out.println();
+
+            Automaton automaton = new Automaton();;
+            String msg = f.readText(filePath, automaton);
+            if(msg == null){
+                DFA dfa;
+                switch (choice) {
+                    case 1:
+                        if(automaton.isDeterministic())
+                            System.out.println("The automaton is deterministic.");
+                        else
+                            System.out.println("The automaton is NOT deterministic.");
+                        break;
+                    case 2:
+                        automaton.toDFA().printDFA();
+                        break;
+                    case 3:
+                        if(!automaton.isDeterministic())
+                            System.out.println("The given automaton is not deterministic.");
+                        automaton.toDFA().minimize().printDFA();
+                        break;
+                    case 4:
+                        if(!automaton.isDeterministic())
+                            System.out.println("The given automaton is not deterministic.");
+                        else if(automaton.toDFA().isComplete())
+                            System.out.println("The automaton is complete.");
+                        else
+                            System.out.println("The automaton is NOT complete.");
+                        break;
+                    case 5:
+                        if(!automaton.isDeterministic())
+                            System.out.println("The given automaton is not deterministic.");
+                        else automaton.toDFA().completeDFA().printDFA();
+                        break;
+                    case 6:
+                        if(!automaton.isDeterministic())
+                            System.out.println("The given automaton is not deterministic.");
+                        else if(automaton.toDFA().isPermutation())
+                            System.out.println("The automaton is permutation.");
+                        else
+                            System.out.println("The automaton is NOT permutation.");
+                        break;
+                    case 7:
+                        if(!automaton.isDeterministic())
+                            System.out.println("The given automaton is not deterministic.");
+                        else if(automaton.toDFA().isCommutative())
+                            System.out.println("The automaton is commutative.");
+                        else
+                            System.out.println("The automaton is NOT commutative.");
+                        break;
+                    case 8:
+                        if(!automaton.isDeterministic())
+                            System.out.println("The given automaton is not deterministic.");
+                        else if(automaton.toDFA().minimize().completeDFA().isPrimeDFA())
+                            System.out.println("The automaton is prime.");
+                        else
+                            System.out.println("The automaton is NOT prime. The automaton is COMPOSITE.");
+                        break;
+                    case 9:
+                        if(!automaton.isDeterministic()) {
+                            System.out.println("The given automaton is not deterministic.");
+                            break;
+                        }
+                        dfa = automaton.toDFA();
+                        if(!dfa.isPermutation())
+                            System.out.println("The given automaton is not permutation.");
+                        else if(dfa.isComposite())
+                            System.out.println("The automaton is composite.");
+                        else
+                            System.out.println("The automaton is NOT composite. The automaton is PRIME.");
+                        break;
+                    case 10:
+                        if(!automaton.isDeterministic()) {
+                            System.out.println("The given automaton is not deterministic.");
+                            break;
+                        }
+                        dfa = automaton.toDFA();
+                        if(!dfa.isPermutation())
+                            System.out.println("The given automaton is not permutation.");
+                        else if(dfa.isCompositeTime())
+                            System.out.println("The automaton is composite.");
+                        else
+                            System.out.println("The automaton is NOT composite. The automaton is PRIME.");
+                        break;
+                    case 11:
+                        if(!automaton.isDeterministic()) {
+                            System.out.println("The given automaton is not deterministic.");
+                            break;
+                        }
+                        dfa = automaton.toDFA();
+                        if(!dfa.isPermutation())
+                            System.out.println("The given automaton is not permutation.");
+                        else if(dfa.isCompositeMemory())
+                            System.out.println("The automaton is composite.");
+                        else
+                            System.out.println("The automaton is NOT composite. The automaton is PRIME.");
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please select a valid option.");
+                }
+            }
+            else{
+                System.out.println(msg);
+            }
+        }
+        scanner.close();
+
+//        String fileName = "automaton37.txt";
+//        Automaton automaton = new Automaton();
+//        FileReader f = new FileReader();
+//        String msg = f.readText(fileName, automaton);
+//        if(msg == null){
 //            System.out.println("\n NFA");
 //            automaton.printNFA();
 //            System.out.println("\n DFA");
-            DFA dfa = automaton.toDFA();
+//            DFA dfa = automaton.toDFA();
 //            dfa.printDFA();
 //            dfa = dfa.minimize().completeDFA();
 //            System.out.println("\n Minimaze");
@@ -89,23 +178,23 @@ public class Main {
 //
 //            System.out.printf("%.6f%n", executionTime);
 
-            for (int i = 0; i < 55; i++) {
+//            for(int i = 0; i < 3; i++) {
+//
+//                long startTime = System.nanoTime();
+//
+//                dfa.isCompositeMemory();
+//
+//                long endTime = System.nanoTime();
+//                double executionTime = (endTime - startTime) / 1e6;
+//
+//                System.out.printf("%.6f%n", executionTime);
+//
+//            }
 
-                long startTime = System.nanoTime();
-
-                dfa.isCompositeMemory();
-
-                long endTime = System.nanoTime();
-                double executionTime = (endTime - startTime) / 1e6;
-
-                System.out.printf("%.6f%n", executionTime);
-
-            }
-
-        }
-        else{
-            System.out.println(msg);
-        }
+//        }
+//        else{
+//            System.out.println(msg);
+//        }
 
 //        Map<Map<String, String>, Set<String>> transitionFunction = new HashMap<>();
 //
@@ -190,32 +279,6 @@ public class Main {
 //        dfa.flipAcceptStates();
 //        dfa.printDFA();
 //        System.out.println(dfa.isAcceptStateReachable());
-    }
-
-    public static List<List<String>> generatePermutations(List<String> states) {
-        List<List<String>> permutations = new ArrayList<>();
-        permute(states, 0, permutations);
-        return permutations;
-    }
-
-    public static void permute(List<String> states, int index, List<List<String>> result) {
-        if (index == states.size()) {
-            result.add(new ArrayList<>(states));
-        } else {
-            for (int i = index; i < states.size(); i++) {
-                Collections.swap(states, i, index);
-                permute(states, index + 1, result);
-                Collections.swap(states, i, index);
-            }
-        }
-    }
-
-    public static void addTransitions(Map<Map<String, String>, String> transitionFunction, List<String> states, String symbol, List<String> permutation) {
-        for (int i = 0; i < states.size(); i++) {
-            Map<String, String> key = new HashMap<>();
-            key.put(states.get(i), symbol);
-            transitionFunction.put(key, permutation.get(i));
-        }
     }
 
 }

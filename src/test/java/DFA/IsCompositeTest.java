@@ -2,7 +2,7 @@ package DFA;
 
 import org.example.Automaton;
 import org.example.DFA;
-import org.example.FileRead;
+import org.example.FileReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +52,7 @@ public class IsCompositeTest {
     void testIsCompositeMemory2() {
         String fileName = "automaton15.txt";
         Automaton automaton = new Automaton();
-        FileRead f = new FileRead();
+        FileReader f = new FileReader();
         String msg = f.readText(fileName, automaton);
         if(msg == null){
             DFA dfa = automaton.toDFA();
@@ -66,7 +66,7 @@ public class IsCompositeTest {
     void testIsCompositeMemory3() {
         String fileName = "automaton17.txt";
         Automaton automaton = new Automaton();
-        FileRead f = new FileRead();
+        FileReader f = new FileReader();
         String msg = f.readText(fileName, automaton);
         if(msg == null){
             DFA dfa = automaton.toDFA();
@@ -80,7 +80,7 @@ public class IsCompositeTest {
     void testCoverMemory3() {
         String fileName = "automaton17.txt";
         Automaton automaton = new Automaton();
-        FileRead f = new FileRead();
+        FileReader f = new FileReader();
         String msg = f.readText(fileName, automaton);
         if(msg == null){
             DFA dfa = automaton.toDFA();
@@ -95,7 +95,7 @@ public class IsCompositeTest {
     void testIsCompositeMemory4() {
         String fileName = "automaton20.txt";
         Automaton automaton = new Automaton();
-        FileRead f = new FileRead();
+        FileReader f = new FileReader();
         String msg = f.readText(fileName, automaton);
         if(msg == null){
             DFA dfa = automaton.toDFA();
@@ -109,7 +109,7 @@ public class IsCompositeTest {
     void testIsCompositeMemory5() {
         String fileName = "automaton18.txt";
         Automaton automaton = new Automaton();
-        FileRead f = new FileRead();
+        FileReader f = new FileReader();
         String msg = f.readText(fileName, automaton);
         if(msg == null){
             DFA dfa = automaton.toDFA();
@@ -123,7 +123,7 @@ public class IsCompositeTest {
     void testCoverMemory4() {
         String fileName = "automaton18.txt";
         Automaton automaton = new Automaton();
-        FileRead f = new FileRead();
+        FileReader f = new FileReader();
         String msg = f.readText(fileName, automaton);
         if(msg == null){
             DFA dfa = automaton.toDFA();

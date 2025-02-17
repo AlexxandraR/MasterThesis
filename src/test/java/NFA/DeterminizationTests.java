@@ -16,7 +16,7 @@ public class DeterminizationTests {
     @Test
     public void testOne() {
         Set<String> states = Set.of("q0", "q1", "q2", "q3", "q4");
-        Set<String> alphabet = Set.of("a", "b");
+        Set<String> alphabet = new HashSet<>(Set.of("a", "b"));
         String startState = "q0";
         Set<String> acceptStates = Set.of("q2", "q4");
 
@@ -45,7 +45,7 @@ public class DeterminizationTests {
     @Test
     public void testTwo() {
         Set<String> states = Set.of("q0", "q1", "q2", "q3");
-        Set<String> alphabet = Set.of("a", "b");
+        Set<String> alphabet = new HashSet<>(Set.of("a", "b"));
         String startState = "q0";
         Set<String> acceptStates = Set.of("q3");
 
@@ -71,7 +71,7 @@ public class DeterminizationTests {
     @Test
     public void testThree() {
         Set<String> states = Set.of("q0", "q1", "q2");
-        Set<String> alphabet = Set.of("a");
+        Set<String> alphabet = new HashSet<>(Set.of("a"));
         String startState = "q0";
         Set<String> acceptStates = Set.of("q0", "q2");
 
@@ -97,7 +97,7 @@ public class DeterminizationTests {
     @Test
     public void testFour() {
         Set<String> states = Set.of("q0", "q1", "q2", "q3");
-        Set<String> alphabet = Set.of("a");
+        Set<String> alphabet = new HashSet<>(Set.of("a"));
         String startState = "q0";
         Set<String> acceptStates = Set.of("q2", "q3");
 
@@ -124,7 +124,7 @@ public class DeterminizationTests {
     @Test
     public void testFive() {
         Set<String> states = Set.of("q0", "q1", "q2");
-        Set<String> alphabet = Set.of("a");
+        Set<String> alphabet = new HashSet<>(Set.of("a"));
         String startState = "q0";
         Set<String> acceptStates = Set.of("q2");
 
@@ -148,7 +148,7 @@ public class DeterminizationTests {
     @Test
     public void testSix() {
         Set<String> states = Set.of("q0", "q1");
-        Set<String> alphabet = Set.of();
+        Set<String> alphabet = new HashSet<>();
         String startState = "q0";
         Set<String> acceptStates = Set.of("q0", "q1");
 
@@ -171,7 +171,7 @@ public class DeterminizationTests {
     @Test
     public void testSeven() {
         Set<String> states = Set.of("q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12");
-        Set<String> alphabet = Set.of("a", "c");
+        Set<String> alphabet = new HashSet<>(Set.of("a", "c"));
         String startState = "q0";
         Set<String> acceptStates = Set.of("q1", "q8", "q10", "q12");
 
@@ -214,7 +214,7 @@ public class DeterminizationTests {
     @Test
     public void testEight() {
         Set<String> states = Set.of("q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14");
-        Set<String> alphabet = Set.of("a", "b", "c");
+        Set<String> alphabet = new HashSet<>(Set.of("a", "b", "c"));
         String startState = "q0";
         Set<String> acceptStates = Set.of("q14");
 
@@ -266,7 +266,7 @@ public class DeterminizationTests {
     @Test
     public void testTen() {
         Set<String> states = Set.of("q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14");
-        Set<String> alphabet = Set.of("a", "b", "c");
+        Set<String> alphabet = new HashSet<>(Set.of("a", "b", "c"));
         String startState = "q0";
         Set<String> acceptStates = Set.of("q5", "q12", "q7", "q14");
 
