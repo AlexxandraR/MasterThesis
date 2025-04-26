@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.Map;
 import java.util.Set;
 
-public class IntersectionTest {
+public class ProductOfAutomataTests {
     @Test
-    public void testIntersection_CommonAcceptStates() {
+    public void testProduct_CommonAcceptStates() {
         Set<String> states1 = Set.of("q0", "q1", "q2");
         Set<String> alphabet = Set.of("a", "b");
         String initialState1 = "q0";
@@ -33,26 +33,26 @@ public class IntersectionTest {
 
         DFA dfa2 = new DFA(states2, alphabet, initialState2, acceptStates2, transitionFunction2);
 
-        DFA intersectionDFA = DFA.intersection(dfa1.completeDFA(), dfa2.completeDFA());
+        DFA productDFA = DFA.product(dfa1.completeDFA(), dfa2.completeDFA());
 
-        assertEquals(Set.of("sink,sink1", "p1,q1", "p2,q2", "p0,q0"), intersectionDFA.getStates());
-        assertEquals(Set.of("a", "b"), intersectionDFA.getAlphabet());
-        assertEquals("p0,q0", intersectionDFA.getInitialState());
-        assertEquals(Set.of("p2,q2"), intersectionDFA.getAcceptStates());
+        assertEquals(Set.of("sink,sink_1", "p1,q1", "p2,q2", "p0,q0"), productDFA.getStates());
+        assertEquals(Set.of("a", "b"), productDFA.getAlphabet());
+        assertEquals("p0,q0", productDFA.getInitialState());
+        assertEquals(Set.of("p2,q2"), productDFA.getAcceptStates());
         assertEquals(Map.of(
-                Map.of("sink,sink1", "b"), "sink,sink1",
-                Map.of("sink,sink1", "a"), "sink,sink1",
+                Map.of("sink,sink_1", "b"), "sink,sink_1",
+                Map.of("sink,sink_1", "a"), "sink,sink_1",
                 Map.of("p1,q1", "b"), "p2,q2",
-                Map.of("p2,q2", "b"), "sink,sink1",
-                Map.of("p0,q0", "b"), "sink,sink1",
+                Map.of("p2,q2", "b"), "sink,sink_1",
+                Map.of("p0,q0", "b"), "sink,sink_1",
                 Map.of("p0,q0", "a"), "p1,q1",
-                Map.of("p1,q1", "a"), "sink,sink1",
-                Map.of("p2,q2", "a"), "sink,sink1"
-        ), intersectionDFA.getTransitionFunction());
+                Map.of("p1,q1", "a"), "sink,sink_1",
+                Map.of("p2,q2", "a"), "sink,sink_1"
+        ), productDFA.getTransitionFunction());
     }
 
     @Test
-    public void testIntersection_DifferentAlphabets() {
+    public void testProduct_DifferentAlphabets() {
         Set<String> states1 = Set.of("q0", "q1");
         Set<String> alphabet1 = Set.of("a");
         String initialState1 = "q0";
@@ -75,12 +75,12 @@ public class IntersectionTest {
 
         DFA dfa2 = new DFA(states2, alphabet2, initialState2, acceptStates2, transitionFunction2);
 
-        assertThrows(IllegalArgumentException.class, () -> DFA.intersection(dfa1, dfa2),
+        assertThrows(IllegalArgumentException.class, () -> DFA.product(dfa1, dfa2),
                 "DFAs with different alphabets should throw IllegalArgumentException.");
     }
 
     @Test
-    public void testIntersection_NoCommonAcceptStates() {
+    public void testProduct_NoCommonAcceptStates() {
         Set<String> states1 = Set.of("q0", "q1", "q2");
         Set<String> alphabet = Set.of("a");
         String initialState1 = "q0";
@@ -104,22 +104,22 @@ public class IntersectionTest {
 
         DFA dfa2 = new DFA(states2, alphabet, initialState2, acceptStates2, transitionFunction2);
 
-        DFA intersectionDFA = DFA.intersection(dfa1.completeDFA(), dfa2.completeDFA());
+        DFA productDFA = DFA.product(dfa1.completeDFA(), dfa2.completeDFA());
 
-        assertEquals(Set.of("p1,q1", "p2,q2", "p0,q0", "p2,sink"), intersectionDFA.getStates());
-        assertEquals(Set.of("a"), intersectionDFA.getAlphabet());
-        assertEquals("p0,q0", intersectionDFA.getInitialState());
-        assertEquals(Set.of(), intersectionDFA.getAcceptStates());
+        assertEquals(Set.of("p1,q1", "p2,q2", "p0,q0", "p2,sink"), productDFA.getStates());
+        assertEquals(Set.of("a"), productDFA.getAlphabet());
+        assertEquals("p0,q0", productDFA.getInitialState());
+        assertEquals(Set.of(), productDFA.getAcceptStates());
         assertEquals(Map.of(
                 Map.of("p2,sink", "a"), "p2,sink",
                 Map.of("p0,q0", "a"), "p1,q1",
                 Map.of("p1,q1", "a"), "p2,q2",
                 Map.of("p2,q2", "a"), "p2,sink"
-        ), intersectionDFA.getTransitionFunction());
+        ), productDFA.getTransitionFunction());
     }
 
     @Test
-    public void testIntersection_SingleStateDFAs() {
+    public void testProduct_SingleStateDFAs() {
         Set<String> states1 = Set.of("q0");
         Set<String> alphabet = Set.of("a");
         String initialState1 = "q0";
@@ -137,15 +137,15 @@ public class IntersectionTest {
 
         DFA dfa2 = new DFA(states2, alphabet, initialState2, acceptStates2, transitionFunction2);
 
-        DFA intersectionDFA = DFA.intersection(dfa1.completeDFA(), dfa2.completeDFA());
+        DFA productDFA = DFA.product(dfa1.completeDFA(), dfa2.completeDFA());
 
-        assertEquals(Set.of("p0,q0", "sink,sink1"), intersectionDFA.getStates());
-        assertEquals(Set.of("a"), intersectionDFA.getAlphabet());
-        assertEquals("p0,q0", intersectionDFA.getInitialState());
-        assertEquals(Set.of("p0,q0"), intersectionDFA.getAcceptStates());
+        assertEquals(Set.of("p0,q0", "sink,sink_1"), productDFA.getStates());
+        assertEquals(Set.of("a"), productDFA.getAlphabet());
+        assertEquals("p0,q0", productDFA.getInitialState());
+        assertEquals(Set.of("p0,q0"), productDFA.getAcceptStates());
         assertEquals(Map.of(
-                Map.of("sink,sink1", "a"), "sink,sink1",
-                Map.of("p0,q0", "a"), "sink,sink1"
-        ), intersectionDFA.getTransitionFunction());
+                Map.of("sink,sink_1", "a"), "sink,sink_1",
+                Map.of("p0,q0", "a"), "sink,sink_1"
+        ), productDFA.getTransitionFunction());
     }
 }

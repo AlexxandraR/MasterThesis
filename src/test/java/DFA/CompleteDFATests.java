@@ -12,7 +12,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CompleteDFATest {
+public class CompleteDFATests {
     private DFA dfa;
 
     @BeforeEach

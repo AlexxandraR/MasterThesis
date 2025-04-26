@@ -78,7 +78,7 @@ public class FileReader {
     /**
      * Reads and processes the first line of the file as the initial state or as a transition.
      *
-     * @param line      the first line from the file
+     * @param line the first line from the file
      * @param automaton the automaton into which the initial state or transition will be loaded
      */
     private void readInitial(String line, Automaton automaton){
@@ -94,7 +94,7 @@ public class FileReader {
     /**
      * Reads and processes a transition line from the file, adding the transition to the automaton.
      *
-     * @param line      the transition line from the file
+     * @param line the transition line from the file
      * @param automaton the automaton into which the transition will be added
      */
     private void readEdges(String line, Automaton automaton){
@@ -139,7 +139,7 @@ public class FileReader {
     /**
      * Reads and processes a line representing a final state, adding the state to the automaton.
      *
-     * @param line      the line representing the final state
+     * @param line the line representing the final state
      * @param automaton the automaton into which the final state will be added
      */
     private void readFinals(String line, Automaton automaton) {

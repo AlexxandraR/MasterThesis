@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 
-public class EpsilonClosureTest {
+public class EpsilonClosureTests {
     private Automaton createAutomaton() {
         Automaton automaton = new Automaton();
         automaton.setStates(new HashSet<>(Set.of("q0", "q1", "q2", "q3")));

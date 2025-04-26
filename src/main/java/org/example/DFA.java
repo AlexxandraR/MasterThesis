@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,12 +19,16 @@ public class DFA {
     private Set<String> acceptStates;
     private Map<Map<String, String>, String> transitionFunction;
 
-    // Method to print all attributes and transition table of the DFA
+    /**
+     * Prints the components of the DFA to the standard output.
+     * This includes the set of states, input alphabet, initial state,
+     * accepting (final) states, and the transition table in a tabular format.
+     */
     public void printDFA() {
         System.out.println("States: " + states);
         System.out.println("Alphabet: " + alphabet);
-        System.out.println("Start State: " + initialState);
-        System.out.println("Accept States: " + acceptStates);
+        System.out.println("Initial State: " + initialState);
+        System.out.println("Accepting States: " + acceptStates);
         System.out.println("Transition Table:");
 
         System.out.print("State");
@@ -43,7 +49,13 @@ public class DFA {
         }
     }
 
-    private List<String> getNonAcceptingStates(){
+
+    /**
+     * Retrieves a list of rejecting states in the DFA.
+     *
+     * @return A list of rejecting states.
+     */
+    private List<String> getRejectingStates(){
         return this.states.stream()
                 .filter(state -> !this.acceptStates.contains(state))
                 .distinct()
@@ -104,18 +116,18 @@ public class DFA {
     /**
      * Partitions the states of the automaton into equivalence classes based on
      * their indistinguishability. The first partition contains accepting states,
-     * and the second contains non-accepting states. The partitioning continues
+     * and the second contains rejecting states. The partitioning continues
      * until no further distinctions between states can be made.
      *
      * @return A list of sets, where each set represents a partition of indistinguishable states.
      */
     private List<Set<String>> partitionStates() {
         List<Set<String>> partitions = new ArrayList<>();
-        Set<String> nonAcceptingStates = new HashSet<>(states);
-        nonAcceptingStates.removeAll(acceptStates);
+        Set<String> rejectingStates = new HashSet<>(states);
+        rejectingStates.removeAll(acceptStates);
 
         partitions.add(acceptStates);
-        partitions.add(nonAcceptingStates);
+        partitions.add(rejectingStates);
 
         boolean changed;
 
@@ -165,6 +177,15 @@ public class DFA {
      * @return A new minimized DFA with the same behavior as the original DFA but with fewer states.
      */
     public DFA minimize() {
+        if(this.getInitialState() == null){
+            return new DFA(
+                    Set.of("q0"),
+                    alphabet,
+                    null,
+                    Set.of("q0"),
+                    Map.of()
+            );
+        }
         //1.
         removeUnreachableStates();
 
@@ -330,16 +351,12 @@ public class DFA {
 //--------------------------------------------Commutative automaton-----------------------------------------------------
 
     /**
-     * Checks if the DFA is commutative.
-     * This method verifies whether the DFA is commutative by testing all possible combinations of
-     * states as initial and accept states for two newly constructed DFAs, `A1` and `A2`.
-     * The method constructs the intersection of these DFAs in two different ways (`Au` and `Av`)
-     * based on different permutations of initial and accept states. If both intersections reach
-     * their accept states, the DFA is not commutative and the method returns `false`.
+     * Checks whether the DFA is commutative.
+     * Implements an algorithm that verifies the existence of specific transition behaviors
+     * that contradict the commutative property, by relying on methods from the Pattern Logic.
      *
-     * @return `true` if the DFA is commutative; `false` otherwise.
+     * @return true if the DFA is commutative; false otherwise.
      */
-
     public boolean isCommutative() {
         for (String q : states) {
             for (String qu : states) {
@@ -357,7 +374,7 @@ public class DFA {
                             A2.setInitialState(qv);
                             A2.setAcceptStates(Set.of(qvu));
 
-                            DFA Au = intersection(A1, A2);
+                            DFA Au = product(A1, A2);
 
                             DFA A11 = new DFA(this.states, this.getAlphabet(), this.initialState, this.acceptStates,
                                     this.transitionFunction);
@@ -369,7 +386,7 @@ public class DFA {
                             A22.setInitialState(qu);
                             A22.setAcceptStates(Set.of(quv));
 
-                            DFA Av = intersection(A11, A22);
+                            DFA Av = product(A11, A22);
 
                             if (Au.isAcceptStateReachable() && Av.isAcceptStateReachable() && !quv.equals(qvu)) {
                                 return false;
@@ -386,12 +403,12 @@ public class DFA {
 
     /**
      * Generates all possible deterministic finite automata (DFAs) with a given number of states.
-     * The method creates all possible transition functions and valid accept state combinations,
-     * then checks whether the DFA's accept states are reachable through intersection with the original DFA.
-     * Only valid DFAs are returned.
+     * The method creates all possible transition functions and valid accepting state combinations,
+     * then checks whether the language of the original DFA is a subset of the language
+     * of the generated DFA. Only valid DFAs are returned.
      *
      * @param numStates The number of states to generate for the DFAs.
-     * @return A set of valid DFAs that satisfy the condition of unreachable accept states after intersection.
+     * @return A set of valid DFAs.
      */
     public Set<DFA> generateAllDFAs(int numStates) {
         Set<DFA> validDFAs = new HashSet<>();
@@ -417,7 +434,7 @@ public class DFA {
                 DFA newDFA = new DFA(states, alphabet, "q0", acceptStates, transitionFunction);
 
                 newDFA.flipAcceptStates();
-                DFA finalDfa = intersection(this, newDFA);
+                DFA finalDfa = product(this, newDFA);
                 newDFA.flipAcceptStates();
 
                 if (!finalDfa.isAcceptStateReachable()) {
@@ -465,9 +482,9 @@ public class DFA {
     }
 
     /**
-     * Generates the set alpha(A), which consists of smaller DFAs that accept the same language as the original DFA.
+     * Generates the set alpha(A), which consists of smaller DFAs that accept the language of the original DFA.
      *
-     * @return A set of DFAs that accept the same language as the original DFA.
+     * @return A set of smaller DFAs that accept the language of the original DFA.
      */
     public Set<DFA> getAlphaDFA() {
         Set<DFA> alphaDFA = new HashSet<>();
@@ -485,10 +502,10 @@ public class DFA {
 
     /**
      * Renames states in the provided DFA to avoid conflicts with the states in this DFA.
-     * This method checks for any overlapping state names between this DFA and the given `otherDFA`.
-     * If there are conflicts, it renames the states in `otherDFA` by appending a specified prefix to each
-     * conflicting state name. The method also updates `otherDFA`'s transition function, initial state,
-     * and accept states to reflect the new names.
+     * This method checks for any overlapping state names between this DFA and the provided DFA.
+     * If there are conflicts, it renames the states in DFA from parameter by appending a
+     * specified prefix to each conflicting state name. The method also updates provided DFA´s
+     * transition function, initial state and accept states to reflect the new names.
      *
      * @param otherDFA The DFA whose states will be renamed in case of conflicts with this DFA.
      */
@@ -497,7 +514,7 @@ public class DFA {
         commonStates.retainAll(otherDFA.states);
 
         if (!commonStates.isEmpty()) {
-            String prefix = "1";
+            String prefix = "_1";
 
             Set<String> renamedStates = new HashSet<>();
             Map<Map<String, String>, String> renamedTransitionFunction = new HashMap<>();
@@ -536,14 +553,14 @@ public class DFA {
     }
 
     /**
-     * Computes the intersection of two deterministic finite automata (DFAs).
-     * The intersection DFA accepts the language that is the intersection of the languages accepted by both input DFAs.
+     * Computes the product of two DFAs.
+     * The product DFA accepts the language that is the intersection of the languages accepted by input DFAs.
      *
      * @param dfa1 The first DFA.
      * @param dfa2 The second DFA.
-     * @return The intersection of the two DFAs as a new DFA.
+     * @return The product of the two DFAs as a new DFA.
      */
-    public static DFA intersection(DFA dfa1, DFA dfa2) {
+    public static DFA product(DFA dfa1, DFA dfa2) {
         if (dfa1.getAlphabet() != dfa2.getAlphabet()) {
             throw new IllegalArgumentException("DFAs must have the same alphabet");
         }
@@ -637,14 +654,14 @@ public class DFA {
     }
 
     /**
-     * Computes the intersection of a set of deterministic finite automata (DFAs).
+     * Computes the product of a set of deterministic finite automata (DFAs).
      * The resulting DFA accepts the intersection of the languages accepted by all DFAs in the set.
      *
-     * @param dfas A set of DFAs to intersect.
-     * @return The intersection of all DFAs in the set as a new DFA.
+     * @param dfas A set of DFAs to product.
+     * @return The product of all DFAs in the set as a new DFA.
      * @throws IllegalArgumentException if the set of DFAs is empty.
      */
-    public static DFA intersection(Set<DFA> dfas) {
+    public static DFA product(Set<DFA> dfas) {
         Iterator<DFA> iterator = dfas.iterator();
 
         if (!iterator.hasNext()) {
@@ -656,7 +673,7 @@ public class DFA {
 
         while (iterator.hasNext()) {
             DFA nextDFA = iterator.next();
-            result = intersection(result, nextDFA);
+            result = product(result, nextDFA);
             iterator.remove();
         }
 
@@ -664,10 +681,10 @@ public class DFA {
     }
 
     /**
-     * Computes the "roof" DFA, which is the intersection of all DFAs in the alpha(A) set.
-     * This DFA represents the intersection of all DFAs that accept the same language as the original DFA.
+     * Computes the "roof" DFA, which is the product of all DFAs in the alpha(A) set.
+     * This DFA represents the product of all DFAs that accept the language of the original DFA.
      *
-     * @return The roof DFA representing the intersection of all smaller DFAs.
+     * @return The roof DFA representing the product of all smaller DFAs.
      * @throws IllegalArgumentException if the alphaDFA set is empty.
      */
     public DFA getRoofDFA() {
@@ -676,12 +693,13 @@ public class DFA {
             return new DFA();
         }
 
-        return DFA.intersection(alphaDFA);
+        return DFA.product(alphaDFA);
     }
 
     /**
-     * Flips the accept states of the DFA. States that were previously accepting become non-accepting,
-     * and non-accepting states become accepting. This is useful for complementing the DFA's language.
+     * Flips the accept states of the DFA.
+     * States that were previously accepting become rejecting, and rejecting states become accepting.
+     * This is useful for complementing the DFA's language.
      */
     public void flipAcceptStates() {
         Set<String> newAcceptStates = new HashSet<>(states);
@@ -724,10 +742,8 @@ public class DFA {
     }
 
     /**
-     * Checks whether the DFA is a prime DFA. A DFA is considered prime if its language cannot
-     * be represented as the intersection of smaller DFAs. This method computes the roof DFA, complements
-     * its accept states, and checks whether the intersection of the original DFA with the roof DFA has reachable
-     * accept states.
+     * Checks whether the DFA is a prime DFA.
+     * Implements the algorithm using the roof of DFA for general DFAs.
      *
      * @return true if the DFA is prime, false otherwise.
      */
@@ -737,7 +753,7 @@ public class DFA {
             return true;
         }
         roof.flipAcceptStates();
-        DFA finalDfa = intersection(this, roof);
+        DFA finalDfa = product(this, roof);
 
         return !finalDfa.isAcceptStateReachable();
     }
@@ -745,22 +761,24 @@ public class DFA {
 //--------------------------------------------isComposite - Memory------------------------------------------------------
 
     /**
-     * Determines whether the automaton is composite based on memory constraints.
-     * It iterates over subsets of non-accept states, checking if they can be covered.
+     * Determines whether the permutation automaton is composite.
+     * This algorithm generates the rejecting states of the orbit-DFA and records the covered rejecting states
+     * of the original automaton. It also stores all possible initial states of processed orbit-DFAs
+     * to prevent redundant regeneration of the same orbit.
      *
-     * @return true if the automaton is composite, false otherwise.
+     * @return True if the automaton is composite; false otherwise.
      */
     public boolean isCompositeMemory() {
-        List<String> nonAcceptStates = this.getNonAcceptingStates();
+        List<String> rejectingStates = this.getRejectingStates();
 
-        if (nonAcceptStates.size() <= 1) {
+        if (rejectingStates.size() <= 1) {
             return false;
         }
 
         Set<String> covered = new HashSet<>();
         Set<Set<String>> processedOrbits = new HashSet<>();
-        for (int size = 2; size <= nonAcceptStates.size(); size++) {
-            if (generateCombinationMemory(nonAcceptStates, size, 0, new HashSet<>(), processedOrbits, covered)) {
+        for (int size = 2; size <= rejectingStates.size(); size++) {
+            if (generateCombinationMemory(rejectingStates, size, 0, new HashSet<>(), processedOrbits, covered)) {
                 return true;
             }
         }
@@ -769,42 +787,47 @@ public class DFA {
     }
 
     /**
-     * Recursively generates subsets of non-accept states and checks if they are covered.
+     * Recursively generates the rejecting states of orbit-DFAs by exploring subsets of states.
+     * The method iterates through possible subsets, considering the target size and current state configuration.
+     * It ensures that all rejecting states are covered, and avoids redundant calculations
+     * by storing previously processed orbits.
      *
-     * @param nonAcceptStates List of non-accept states.
-     * @param size Target size of the subset.
-     * @param index Current index in the list.
-     * @param current Current subset of states being considered.
-     * @param processedOrbits Set of already processed orbits.
-     * @param covered Set of covered states.
-     * @return true if all non-accept states are covered, false otherwise.
+     * @param rejectingStates The set of rejecting states.
+     * @param size The target size of the subset to be generated.
+     * @param index The current index in the subset of states.
+     * @param current The current subset of states being considered for the orbit-DFA.
+     * @param processedOrbits  A set of initial states from previously processed orbits to avoid redundant generation.
+     * @param covered A set of states that are covered during the generation process.
+     *
+     * @return True if all rejecting states are covered; false otherwise.
      */
-    private boolean generateCombinationMemory(List<String> nonAcceptStates, int size, int index, Set<String> current,
+    private boolean generateCombinationMemory(List<String> rejectingStates, int size, int index, Set<String> current,
                                               Set<Set<String>> processedOrbits, Set<String> covered) {
         if (current.size() == size) {
             if (!processedOrbits.contains(current)) {
                 covered.addAll(coverMemory(new HashSet<>(current), processedOrbits));
-                return covered.size() == nonAcceptStates.size();
+                return covered.size() == rejectingStates.size();
             }
             return false;
         }
 
-        for (int i = index; i < nonAcceptStates.size(); i++) {
-            current.add(nonAcceptStates.get(i));
-            if (generateCombinationMemory(nonAcceptStates, size, i + 1, current, processedOrbits, covered)) {
+        for (int i = index; i < rejectingStates.size(); i++) {
+            current.add(rejectingStates.get(i));
+            if (generateCombinationMemory(rejectingStates, size, i + 1, current, processedOrbits, covered)) {
                 return true;
             }
-            current.remove(nonAcceptStates.get(i));
+            current.remove(rejectingStates.get(i));
         }
         return false;
     }
 
     /**
-     * Computes the cover set of a given subset of states, taking processed orbits into account.
+     * Computes the set of states covered by the orbit-DFA defined by the rejecting state
+     * and stores all states of the orbit-DFA.
      *
-     * @param U The subset of states to cover.
-     * @param processedOrbits Set of already processed orbits.
-     * @return The set of covered states if they do not include accept states, otherwise an empty set.
+     * @param U The set containing the generated rejecting state used to construct the orbit-DFA.
+     * @param processedOrbits A set of already processed orbits to prevent redundant generation.
+     * @return The set of covered rejecting states; otherwise, returns an empty set.
      */
     public Set<String> coverMemory(Set<String> U, Set<Set<String>> processedOrbits) {
         Set<Set<String>> CU = new HashSet<>();
@@ -821,11 +844,16 @@ public class DFA {
     }
 
     /**
-     * Expands the orbits of state subsets by applying transition functions.
+     * Determines whether the orbit generated from the given state covers any rejecting states
+     * of the original automaton.
+     * The method constructs the complete orbit-DFA by exhaustively applying all transitions from the initial state.
+     * If the generated orbit is smaller than the original automaton, it may cover some rejecting states.
+     * Conversely, if the orbit is larger, it does not cover any states.
      *
-     * @param CU Set of state subsets to expand.
-     * @param processedOrbits Set of already processed orbits.
-     * @return true if expansion completes successfully, false otherwise.
+     * @param CU A set containing the rejecting state used to generate the orbit-DFA.
+     * @param processedOrbits A set of previously processed orbits to prevent redundant computations.
+     *
+     * @return True if the generated orbit-DFA covers any states of the original automaton; false otherwise.
      */
     private boolean expandOrbitsMemory(Set<Set<String>> CU, Set<Set<String>> processedOrbits) {
         Set<Set<String>> addedSets = new HashSet<>(CU);
@@ -854,21 +882,22 @@ public class DFA {
 //--------------------------------------------isComposite - Time--------------------------------------------------------
 
     /**
-     * Determines whether the automaton is composite based on time-based coverage criteria.
-     * The method checks if non-accepting states can be covered in subsets of increasing sizes.
+     * Determines whether the permutation automaton is composite.
+     * This algorithm generates the rejecting states of the orbit-DFA and records the covered rejecting states
+     * of the original automaton.
      *
-     * @return true if the automaton is composite, false otherwise.
+     * @return True if the automaton is composite; false otherwise.
      */
     public boolean isCompositeTime() {
-        List<String> nonAcceptStates = this.getNonAcceptingStates();
+        List<String> rejectingStates = this.getRejectingStates();
 
-        if (nonAcceptStates.size() <= 1) {
+        if (rejectingStates.size() <= 1) {
             return false;
         }
 
         Set<String> covered = new HashSet<>();
-        for (int size = 2; size <= nonAcceptStates.size(); size++) {
-            if (generateCombinationTime(nonAcceptStates, size, 0, new HashSet<>(), covered)) {
+        for (int size = 2; size <= rejectingStates.size(); size++) {
+            if (generateCombinationTime(rejectingStates, size, 0, new HashSet<>(), covered)) {
                 return true;
             }
         }
@@ -877,36 +906,39 @@ public class DFA {
     }
 
     /**
-     * Recursively generates combinations of non-accepting states and checks if all states can be covered.
+     * Recursively generates the rejecting states of orbit-DFAs by exploring subsets of rejecting states.
+     * The method iterates through possible subsets, considering the target size and current state configuration.
+     * It ensures that all rejecting states of original automaton are covered.
      *
-     * @param nonAcceptStates List of non-accepting states.
-     * @param size The size of the combination being generated.
-     * @param index The current index in the list of states.
-     * @param current The current combination of states being considered.
-     * @param covered The set of covered states.
-     * @return true if all non-accepting states are covered, false otherwise.
+     * @param size The target size of the subset to be generated.
+     * @param index The current index in the subset of states.
+     * @param current The current subset of states being considered for the orbit-DFA.
+     * @param covered A set of states that are covered during the generation process.
+     * @param rejectingStates The set of rejecting states.
+     *
+     * @return True if all rejecting states are covered; false otherwise.
      */
-    private boolean generateCombinationTime(List<String> nonAcceptStates, int size, int index, Set<String> current,
+    private boolean generateCombinationTime(List<String> rejectingStates, int size, int index, Set<String> current,
                                             Set<String> covered) {
         if (current.size() == size) {
             covered.addAll(coverTime(new HashSet<>(current)));
-            return covered.size() == nonAcceptStates.size();
+            return covered.size() == rejectingStates.size();
         }
 
-        for (int i = index; i < nonAcceptStates.size(); i++) {
-            current.add(nonAcceptStates.get(i));
-            if (generateCombinationTime(nonAcceptStates, size, i + 1, current, covered)) {
+        for (int i = index; i < rejectingStates.size(); i++) {
+            current.add(rejectingStates.get(i));
+            if (generateCombinationTime(rejectingStates, size, i + 1, current, covered)) {
                 return true;
             }
-            current.remove(nonAcceptStates.get(i));
+            current.remove(rejectingStates.get(i));
         }
         return false;
     }
 
     /**
-     * Computes the set of states covered by a given set U based on time-based expansion.
+     * Computes the set of covered rejecting states.
      *
-     * @param U The initial set of states to expand.
+     * @param U The set containing state used to generate the orbit-DFA.
      * @return The set of covered states.
      */
     public Set<String> coverTime(Set<String> U) {
@@ -923,12 +955,15 @@ public class DFA {
     }
 
     /**
-     * Expands the given set of state subsets based on transitions, ensuring that all possible reachable states
-     * are considered. Stops expansion if the number of covered states reaches the total number of states in the
-     * automaton.
+     * Determines whether the orbit generated from the given state covers any rejecting states
+     * of the original automaton.
+     * The method constructs the complete orbit-DFA by exhaustively applying all transitions from the initial state.
+     * If the generated orbit is smaller than the original automaton, it may cover some rejecting states.
+     * Conversely, if the orbit is larger, it does not cover any states.
      *
-     * @param CU The set of subsets to be expanded.
-     * @return true if expansion is successful, false if it reaches the full set of states.
+     * @param CU A set containing the state used to generate the orbit-DFA.
+     *
+     * @return True if the generated orbit-DFA covers any states of the original automaton; false otherwise.
      */
     private boolean expandOrbitsTime(Set<Set<String>> CU) {
         Set<Set<String>> addedSets = new HashSet<>(CU);
@@ -956,24 +991,23 @@ public class DFA {
 //--------------------------------------------isComposite - Original----------------------------------------------------
 
     /**
-     * Determines whether the automaton is composite.
-     * A composite automaton is one where every non-accepting state belongs to some covering subset
-     * that satisfies the transition properties defined by the `cover` method.
+     * Determines whether the permutation automaton is composite.
+     * It iterates over rejecting states, checking if they can be covered.
      *
-     * @return true if the automaton is composite, false otherwise.
+     * @return True if the automaton is composite; false otherwise.
      */
     public boolean isComposite() {
-        List<String> nonAcceptStates = this.getNonAcceptingStates();
+        List<String> rejectingStates = this.getRejectingStates();
 
-        if (nonAcceptStates.size() <= 1) {
+        if (rejectingStates.size() <= 1) {
             return false;
         }
 
-        for (String p : nonAcceptStates) {
+        for (String p : rejectingStates) {
             int flag = 0;
-            List<String> filteredStates = new ArrayList<>(nonAcceptStates);
+            List<String> filteredStates = new ArrayList<>(rejectingStates);
             filteredStates.remove(p);
-            for (int size = 2; size <= nonAcceptStates.size(); size++) {
+            for (int size = 2; size <= rejectingStates.size(); size++) {
                 if (generateCombination(filteredStates, size, 0, new HashSet<>(Set.of(p))) == 1) {
                     flag = 1;
                     break;
@@ -987,37 +1021,40 @@ public class DFA {
     }
 
     /**
-     * Recursively generates combinations of non-accepting states and checks if any subset satisfies the cover
-     * condition.
+     * Recursively generates the states of orbit-DFAs by exploring subsets of states.
+     * The method iterates through possible subsets containing chosen rejecting state,
+     * considering the target size and the current state configuration.
+     * It ensures that the rejecting state is covered.
      *
-     * @param nonAcceptStates List of non-accepting states.
-     * @param size The target size of the subset to generate.
-     * @param index The starting index for combination selection.
-     * @param current The current subset being constructed.
-     * @return 1 if a valid covering subset is found, otherwise 0.
+     * @param size The target size of the subset to be generated.
+     * @param index The current index in the subset of states.
+     * @param current The current subset of states being considered for the orbit-DFA.
+     * @param rejectingStates The list of rejecting states.
+     *
+     * @return True if the rejecting state is covered; false otherwise.
      */
-    private int generateCombination(List<String> nonAcceptStates, int size, int index, Set<String> current) {
+    private int generateCombination(List<String> rejectingStates, int size, int index, Set<String> current) {
         if (current.size() == size) {
             if (cover(current)) {
                 return 1;
             }
             return 0;
         }
-        for (int i = index; i < nonAcceptStates.size(); i++) {
-            current.add(nonAcceptStates.get(i));
-            if (generateCombination(nonAcceptStates, size, i + 1, current) == 1) {
+        for (int i = index; i < rejectingStates.size(); i++) {
+            current.add(rejectingStates.get(i));
+            if (generateCombination(rejectingStates, size, i + 1, current) == 1) {
                 return 1;
             }
-            current.remove(nonAcceptStates.get(i));
+            current.remove(rejectingStates.get(i));
         }
         return 0;
     }
 
     /**
-     * Checks whether a given subset of states covers the initial state through transitions.
+     * Checks whether the orbit-DFA generated from the given subset of states covers the states.
      *
-     * @param U The subset of states to test for coverage.
-     * @return true if the subset covers the initial state, otherwise false.
+     * @param U The set containing the state used to generate the orbit-DFA.
+     * @return True if the orbit-DFA generated from the subset covers the rejecting state; false otherwise.
      */
     public boolean cover(Set<String> U) {
         Set<Set<String>> CU = new HashSet<>();
@@ -1027,11 +1064,15 @@ public class DFA {
     }
 
     /**
-     * Expands orbits by applying state transitions iteratively.
-     * The process continues until no new subsets are generated or all states are covered.
+     * Determines whether the orbit generated from the given state covers the rejecting state
+     * of the original automaton.
+     * The method constructs the complete orbit-DFA by exhaustively applying all transitions from the state.
+     * If the generated orbit is smaller than the original automaton, it covers the rejecting state.
+     * Conversely, if the orbit is larger, it does not cover the state.
      *
-     * @param CU A set of state subsets representing the current coverage.
-     * @return true if the expansion remains within bounds, false if all states are covered.
+     * @param CU A set containing the state used to generate the orbit-DFA.
+     *
+     * @return True if the generated orbit-DFA covers the chosen state of the original automaton; false otherwise.
      */
     private boolean expandOrbits(Set<Set<String>> CU) {
         Set<Set<String>> addedSets = new HashSet<>(CU);
@@ -1056,4 +1097,542 @@ public class DFA {
         return true;
     }
 
+//--------------------------------------------isComposite - Initial-----------------------------------------------------
+
+    /**
+     * Determines whether the permutation automaton is composite.
+     * This algorithm generates the initial states of the orbit-DFA and records the covered rejecting states
+     * of the original automaton.
+     *
+     * @return True if the automaton is composite; false otherwise.
+     */
+    public boolean isCompositeInitial() {
+        List<String> statesWithoutInitial = new ArrayList<>(this.states.stream().toList());
+        statesWithoutInitial.remove(this.initialState);
+
+        int rejectingStatesSize = this.getRejectingStates().size();
+
+        if (rejectingStatesSize <= 1) {
+            return false;
+        }
+
+        Set<String> covered = new HashSet<>();
+        for (int size = 2; size <= rejectingStatesSize; size++) {
+            if (generateCombinationInitial(statesWithoutInitial, size, 0,
+                    new HashSet<>(Set.of(this.initialState)), covered, rejectingStatesSize)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Recursively generates the initial states of orbit-DFAs by exploring subsets of states.
+     * The method iterates through possible subsets containing initial state of the original automaton,
+     * considering the target size and the current state configuration.
+     * It ensures that all rejecting states are covered.
+     *
+     * @param statesWithoutInitial A list of states excluding the initial state.
+     * @param size The target size of the subset to be generated.
+     * @param index The current index in the subset of states.
+     * @param current The current subset of states being considered for the orbit-DFA.
+     * @param covered A set of states that are covered during the generation process.
+     * @param rejectingStatesSize The number of rejecting states.
+     *
+     * @return True if all rejecting states are covered; false otherwise.
+     */
+    private boolean generateCombinationInitial(List<String> statesWithoutInitial, int size, int index,
+                                               Set<String> current, Set<String> covered, int rejectingStatesSize) {
+        if (current.size() == size) {
+            covered.addAll(coverInitial(new HashSet<>(current)));
+            return covered.size() == rejectingStatesSize;
+        }
+
+        for (int i = index; i < statesWithoutInitial.size(); i++) {
+            current.add(statesWithoutInitial.get(i));
+            if (generateCombinationInitial(statesWithoutInitial, size, i + 1, current, covered,
+                    rejectingStatesSize)) {
+                return true;
+            }
+            current.remove(statesWithoutInitial.get(i));
+        }
+        return false;
+    }
+
+    /**
+     * Computes the set of states covered by the orbit-DFA defined by its initial state.
+     *
+     * @param U The set containing the generated initial state used to construct the orbit-DFA.
+     * @return The set of covered rejecting states; otherwise, returns an empty set.
+     */
+    public Set<String> coverInitial(Set<String> U) {
+        Set<Set<String>> CU = new HashSet<>();
+        CU.add(U);
+
+        if (expandOrbitsInitial(CU)) {
+            return CU.stream()
+                    .filter(subset -> subset.stream().noneMatch(this.acceptStates::contains))
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toSet());
+        }
+        return Set.of();
+    }
+
+    /**
+     * Determines whether the orbit generated from the given initial state covers any rejecting states
+     * of the original automaton.
+     * The method constructs the complete orbit-DFA by exhaustively applying all transitions from the initial state.
+     * If the generated orbit is smaller than the original automaton, it may cover some rejecting states.
+     * Conversely, if the orbit is larger, it does not cover any states.
+     *
+     * @param CU A set containing the initial state used to generate the orbit-DFA.
+     *
+     * @return True if the generated orbit-DFA covers any states of the original automaton; false otherwise.
+     */
+    private boolean expandOrbitsInitial(Set<Set<String>> CU) {
+        Set<Set<String>> addedSets = new HashSet<>(CU);
+
+        while (true) {
+            addedSets = addedSets.stream()
+                    .flatMap(S -> this.getAlphabet().stream()
+                            .map(sigma -> S.stream()
+                                    .map(state -> this.getTransitionFunction().getOrDefault(Map.of(state, sigma),
+                                            null))
+                                    .filter(Objects::nonNull)
+                                    .collect(Collectors.toSet())))
+                    .filter(set -> !set.isEmpty())
+                    .collect(Collectors.toSet());
+
+            if (!CU.addAll(addedSets)) break;
+
+            if (CU.size() >= this.getStates().size()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+//--------------------------------------------isComposite - InitialMemory-----------------------------------------------
+
+    /**
+     * Determines whether the permutation automaton is composite.
+     * This algorithm generates the initial states of the orbit-DFA and records the covered rejecting states
+     * of the original automaton. It also stores all possible initial states of processed orbit-DFAs
+     * to prevent redundant regeneration of the same orbit.
+     *
+     * @return True if the automaton is composite; false otherwise.
+     */
+    public boolean isCompositeInitialMemory() {
+        List<String> statesWithoutInitial = new ArrayList<>(this.states.stream().toList());
+        statesWithoutInitial.remove(this.initialState);
+
+        int rejectingStatesSize = this.getRejectingStates().size();
+
+        if (rejectingStatesSize <= 1) {
+            return false;
+        }
+
+        Set<String> covered = new HashSet<>();
+        for (int size = 2; size <= rejectingStatesSize; size++) {
+            if (generateCombinationInitialMemory(statesWithoutInitial, size, 0,
+                    new HashSet<>(Set.of(this.initialState)), new HashSet<>(), covered, rejectingStatesSize)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Recursively generates the initial states of orbit-DFAs by exploring subsets of states.
+     * The method iterates through possible subsets containing initial state of the original automaton,
+     * considering the target size and current state configuration.
+     * It ensures that all rejecting states are covered, and avoids redundant calculations
+     * by storing previously processed orbits.
+     *
+     * @param statesWithoutInitial A list of states excluding the initial state.
+     * @param size The target size of the subset to be generated.
+     * @param index The current index in the subset of states.
+     * @param current The current subset of states being considered for the orbit-DFA.
+     * @param processedOrbits  A set of initial states from previously processed orbits to avoid redundant generation.
+     * @param covered A set of states that are covered during the generation process.
+     *
+     * @return True if all rejecting states are covered; false otherwise.
+     */
+    private boolean generateCombinationInitialMemory(List<String> statesWithoutInitial, int size, int index,
+                                                     Set<String> current, Set<Set<String>> processedOrbits,
+                                                     Set<String> covered, int rejectingStatesSize) {
+        if (current.size() == size) {
+            if (!processedOrbits.contains(current)) {
+                covered.addAll(coverInitialMemory(new HashSet<>(current), processedOrbits));
+                return covered.size() == rejectingStatesSize;
+            }
+            return false;
+        }
+
+        for (int i = index; i < statesWithoutInitial.size(); i++) {
+            current.add(statesWithoutInitial.get(i));
+            if (generateCombinationInitialMemory(statesWithoutInitial, size, i + 1, current, processedOrbits,
+                    covered, rejectingStatesSize)) {
+                return true;
+            }
+            current.remove(statesWithoutInitial.get(i));
+        }
+        return false;
+    }
+
+    /**
+     * Computes the set of states covered by the orbit-DFA defined by its initial state
+     * and stores all possible initial states of the orbit-DFA.
+     *
+     * @param U The set containing the generated initial state used to construct the orbit-DFA.
+     * @param processedOrbits A set of already processed orbits to prevent redundant generation.
+     * @return The set of covered rejecting states; otherwise, returns an empty set.
+     */
+    public Set<String> coverInitialMemory(Set<String> U, Set<Set<String>> processedOrbits) {
+        Set<Set<String>> CU = new HashSet<>();
+        CU.add(U);
+
+        if (expandOrbitsInitialMemory(CU, processedOrbits)) {
+            return CU.stream()
+                    .filter(subset -> subset.stream().noneMatch(this.acceptStates::contains))
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toSet());
+        }
+        return Set.of();
+    }
+
+    /**
+     * Determines whether the orbit generated from the given initial state covers any rejecting states
+     * of the original automaton.
+     * The method constructs the complete orbit-DFA by exhaustively applying all transitions from the initial state.
+     * If the generated orbit is smaller than the original automaton, it may cover some rejecting states.
+     * Conversely, if the orbit is larger, it does not cover any states.
+     *
+     * @param CU A set containing the initial state used to generate the orbit-DFA.
+     * @param processedOrbits A set of previously processed orbits to prevent redundant computations.
+     *
+     * @return True if the generated orbit-DFA covers any states of the original automaton; false otherwise.
+     */
+    private boolean expandOrbitsInitialMemory(Set<Set<String>> CU, Set<Set<String>> processedOrbits) {
+        Set<Set<String>> addedSets = new HashSet<>(CU);
+
+        while (true) {
+            addedSets = addedSets.stream()
+                    .flatMap(S -> this.getAlphabet().stream()
+                            .map(sigma -> S.stream()
+                                    .map(state -> this.getTransitionFunction().getOrDefault(Map.of(state, sigma),
+                                            null))
+                                    .filter(Objects::nonNull)
+                                    .collect(Collectors.toSet())))
+                    .filter(set -> !set.isEmpty())
+                    .collect(Collectors.toSet());
+
+            processedOrbits.addAll(addedSets.stream().filter(state -> state.contains(this.initialState))
+                    .collect(Collectors.toSet()));
+            if (!CU.addAll(addedSets)) break;
+
+            if (CU.size() >= this.getStates().size()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+//---------------------------------isComposite - Commutative - Deterministic--------------------------------------------
+    /**
+     * Determines whether the commutative permutation automaton is composite.
+     * The algorithm attempts to find a word that covers all rejecting states of the DFA.
+     *
+     * @return True if the automaton is composite; false otherwise.
+     */
+    public boolean isCompositeCommutative(){
+        List<String> rejectingStates = this.getRejectingStates();
+        for(String p : rejectingStates){
+            boolean cover_found = false;
+            for(String q : rejectingStates){
+                if(!Objects.equals(p, q) && coverCommutative(p, q)){
+                    cover_found = true;
+                    break;
+                }
+            }
+            if(!cover_found){
+                return false;
+            }
+        }
+        return !rejectingStates.isEmpty();
+    }
+
+    /**
+     * Determines whether the state p is covered, i.e., whether there exists a word
+     * that leads from state p to the target state q, such that no state encountered
+     * during any number of repeated applications of this word is an accepting state.
+     *
+     * @param p The state whose coverage is being analyzed.
+     * @param q The target state that should be reached after processing the input from state p.
+     *
+     * @return True if the state p is covered, false otherwise.
+     */
+    private boolean coverCommutative(String p, String q){
+        String s = q;
+        List<Integer> powers = new ArrayList<>(java.util.Collections.nCopies(this.getAlphabet().size(), 0));
+        while(!Objects.equals(s, p)){
+            s = mimic(powers, 0, 0, p, q, s);
+            if(s == null || this.getAcceptStates().contains(s)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Constructs a word based on a list of exponents, where each exponent represents
+     * the number of repetitions of the corresponding alphabet letter.
+     *
+     * @param exponents A list of integers indicating how many times each letter should appear in the word.
+     *
+     * @return A list of letters forming the constructed word.
+     */
+    private List<String> createWord(List<Integer> exponents){
+        List<String> word = new ArrayList<>();
+        int index = 0;
+        for(String letter : this.getAlphabet()){
+            for(int i = 0; i < exponents.get(index); i++){
+                word.add(letter);
+            }
+            index++;
+        }
+        return word;
+    }
+
+    /**
+     * Generates all possible exponent combinations to construct candidate words under the assumption of commutativity.
+     *
+     * @param powers A list of exponents representing how many times each letter from the alphabet is used.
+     * @param index The index of the current letter in the alphabet.
+     * @param sum The number of letters used so far.
+     * @param p The rejecting state being checked for coverage.
+     * @param q The target state the automaton should reach after processing the generated word from state p.
+     * @param s An auxiliary state used during the computation.
+     *
+     * @return True if the rejecting state p is covered; false otherwise.
+     */
+    public String mimic(List<Integer> powers, int index, int sum, String p, String q, String s) {
+        if(index == this.getAlphabet().size()){
+            if(sum == 0){
+                return null;
+            }
+            List<String> word = createWord(powers);
+            if(Objects.equals(traverse(p, word), q)){
+                return traverse(s, word);
+            }
+            else{
+                return null;
+            }
+        }
+        for(int x = 0; x <= this.getStates().size() - sum; x++){
+            powers.set(index, x);
+            String state = mimic(powers, index + 1, sum + powers.get(index), p, q, s);
+            powers.set(index, 0);
+            if(state != null){
+                return state;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Executes the transition function of the automaton by processing the given word
+     * starting from the specified state.
+     *
+     * @param state The initial state from which the word is processed.
+     * @param word The word to be processed by the automaton.
+     *
+     * @return The resulting state after the entire word has been processed.
+     */
+    private String traverse(String state, List<String> word){
+        for(String letter : word){
+            state = this.getTransitionFunction().get(Map.of(state, letter));
+        }
+        return state;
+    }
+
+//---------------------------------isComposite - Commutative - Saved Word-----------------------------------------------
+
+    /**
+     * Determines whether the commutative permutation automaton is composite.
+     * The algorithm attempts to find a word that covers all rejecting states of the DFA.
+     * Once a covering word is found, it is stored to prevent redundant computation.
+     *
+     * @return True if the automaton is composite; false otherwise.
+     */
+    public boolean isCompositeCommutativeSavedWord(){
+        List<String> rejectingStates = this.getRejectingStates();
+        for(String p : rejectingStates){
+            boolean cover_found = false;
+            for(String q : rejectingStates){
+                if(!Objects.equals(p, q) && coverCommutativeSavedWord(p, q)){
+                    cover_found = true;
+                    break;
+                }
+            }
+            if(!cover_found){
+                return false;
+            }
+        }
+        return !rejectingStates.isEmpty();
+    }
+
+    /**
+     * Determines whether the state p is covered, i.e., whether there exists a word
+     * that leads from state p to the target state q, such that no state encountered
+     * during any number of repeated applications of this word is an accepting state.
+     * The covering word is stored to avoid redundant recomputation during repeated
+     * applications of the word.
+     *
+     * @param p The state whose coverage is being analyzed.
+     * @param q The target state that should be reached after processing the input from state p.
+     *
+     * @return True if the state p is covered, false otherwise.
+     */
+    private boolean coverCommutativeSavedWord(String p, String q){
+        String s = q;
+        List<Integer> powers = new ArrayList<>(java.util.Collections.nCopies(this.getAlphabet().size(), 0));
+        List<String> word = new ArrayList<>();
+        while(!Objects.equals(s, p)){
+            if(word.isEmpty()){
+                Pair<String, List<String>> pair = mimicSavedWord(powers, 0, 0, p, q, s);
+                if(pair == null){
+                    return false;
+                }
+                else{
+                    s = pair.getKey();
+                    word = pair.getValue();
+                }
+            }
+            else{
+                s = traverse(s, word);
+            }
+            if(this.getAcceptStates().contains(s)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Generates all possible exponent combinations to construct candidate words under the assumption of commutativity.
+     *
+     * @param powers A list of exponents representing how many times each letter from the alphabet is used.
+     * @param index The index of the current letter in the alphabet.
+     * @param sum The number of letters used so far.
+     * @param p The rejecting state being checked for coverage.
+     * @param q The target state the automaton should reach after processing the generated word from state p.
+     * @param s An auxiliary state used during the computation.
+     *
+     * @return True if the rejecting state p is covered; false otherwise.
+     */
+    public Pair<String, List<String>> mimicSavedWord(List<Integer> powers, int index, int sum, String p, String q, String s) {
+        if(index == this.getAlphabet().size()){
+            if(sum == 0){
+                return null;
+            }
+            List<String> word = createWord(powers);
+            if(Objects.equals(traverse(p, word), q)){
+                return Pair.of(traverse(s, word), word);
+            }
+            else{
+                return null;
+            }
+        }
+        for(int x = 0; x <= this.getStates().size() - sum; x++){
+            powers.set(index, x);
+            Pair<String, List<String>> pair = mimicSavedWord(powers, index + 1, sum + powers.get(index), p, q, s);
+            powers.set(index, 0);
+            if(pair != null){
+                return pair;
+            }
+        }
+        return null;
+    }
+
+//---------------------------------isComposite - Commutative - Big Alphabet--------------------------------------------
+
+    /**
+     * Determines whether the commutative permutation automaton is composite.
+     * The algorithm attempts to find a word that covers all rejecting states of the DFA
+     * with respect to a large input alphabet.
+     *
+     * @return True if the automaton is composite; true otherwise.
+     */
+    public boolean isCompositeCommutativeBigAlphabet(){
+        List<String> rejectingStates = this.getRejectingStates();
+        for(String p : rejectingStates){
+            boolean cover_found = false;
+            for(String q : rejectingStates){
+                if(!Objects.equals(p, q) && coverCommutativeBigAlphabet(p, q)){
+                    cover_found = true;
+                    break;
+                }
+            }
+            if(!cover_found){
+                return false;
+            }
+        }
+        return !rejectingStates.isEmpty();
+    }
+
+    /**
+     * Determines whether the state p is covered, i.e., whether there exists a word
+     * that leads from state p to the target state q, such that no state encountered
+     * during any number of repeated applications of this word is an accepting state.
+     *
+     * @param p The state whose coverage is being analyzed.
+     * @param q The target state that should be reached after processing the input from state p.
+     *
+     * @return True if the state p is covered, false otherwise.
+     */
+    private boolean coverCommutativeBigAlphabet(String p, String q){
+        String s = q;
+        while(!Objects.equals(s, p)){
+            s = mimicBigAlphabet(0, p, q, s);
+            if(s == null || this.getAcceptStates().contains(s)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Iteratively explores all possible input words of length up to the number of states in the automaton,
+     * simulating transitions character by character without storing the actual words.
+     *
+     * @param l Counter used to track the current length of the input word.
+     * @param p The state whose coverage is being analyzed.
+     * @param q The target state that should be reached after processing the input from state p.
+     * @param s Auxiliary state used during the computation.
+     *
+     * @return The state reached after simulating the input word from state q.
+     */
+    public String mimicBigAlphabet(int l, String p, String q, String s) {
+        if(Objects.equals(p, q)){
+            return s;
+        }
+        else if(l >= this.getStates().size()){
+            return null;
+        }
+        for(String letter : this.getAlphabet()){
+            String r = mimicBigAlphabet(
+                    l + 1,
+                    this.getTransitionFunction().get(Map.of(p, letter)),
+                    q,
+                    this.getTransitionFunction().get(Map.of(s, letter))
+            );
+            if(r != null){
+                return r;
+            }
+        }
+        return null;
+    }
 }

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Map;
 import java.util.Set;
-public class IsCommutativeTest {
+public class IsCommutativeTests {
     @Test
     public void testIsCommutative_ForNonCommutativeDFA() {
         Set<String> states = Set.of("q0", "q1", "q2");

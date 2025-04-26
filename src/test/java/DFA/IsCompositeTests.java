@@ -10,7 +10,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class IsCompositeTest {
+public class IsCompositeTests {
     private DFA automaton;
 
     @BeforeEach

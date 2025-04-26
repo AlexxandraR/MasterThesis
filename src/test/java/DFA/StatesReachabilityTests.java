@@ -12,7 +12,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class StatesReachabilityTest {
+public class StatesReachabilityTests {
     private DFA dfa;
     @BeforeEach
     void setUp() {

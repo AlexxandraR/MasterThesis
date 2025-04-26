@@ -14,9 +14,6 @@ public class Automaton {
     private Set<String> acceptStates;
     private Map<Map<String, String>, Set<String>> transitionFunction;
 
-    /**
-     * Constructs an empty Automaton with an empty set of states, alphabet, and transitions.
-     */
     public Automaton() {
         this.states = new HashSet<>();
         this.alphabet = new HashSet<>();
@@ -31,8 +28,8 @@ public class Automaton {
     public void printNFA() {
         System.out.println("States: " + states);
         System.out.println("Alphabet: " + alphabet);
-        System.out.println("Start State: " + initialState);
-        System.out.println("Accept States: " + acceptStates);
+        System.out.println("Initial State: " + initialState);
+        System.out.println("Accepting States: " + acceptStates);
         System.out.println("Transition Table:");
 
         Set<String> alpha = new HashSet<>();
