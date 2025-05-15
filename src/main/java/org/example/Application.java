@@ -43,16 +43,16 @@ public class Application {
                         break;
                     case 2:
                         System.out.println("Here is converted automaton:");
-                        automaton.toDFA().printDFA();
+                        automaton.toDFA().printOutputDFA();
                         break;
                     case 3:
                         if(!automaton.isDeterministic()){
                             System.out.println("The given automaton is not deterministic. " +
                                     "The automaton is first converted to DFA as follow:");
-                            dfa.printDFA();
+                            dfa.printOutputDFA();
                         }
                         System.out.println("Here is minimized automaton:");
-                        dfa.minimize().printDFA();
+                        dfa.minimize().printOutputDFA();
                         break;
                     case 4:
                         if(!automaton.isDeterministic())
@@ -65,7 +65,10 @@ public class Application {
                     case 5:
                         if(!automaton.isDeterministic())
                             System.out.println("The given automaton is not deterministic.");
-                        else dfa.completeDFA().printDFA();
+                        else {
+                            System.out.println("Here is complete automaton:");
+                            dfa.completeDFA().printOutputDFA();
+                        }
                         break;
                     case 6:
                         if(!automaton.isDeterministic())

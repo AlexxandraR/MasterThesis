@@ -49,6 +49,24 @@ public class DFA {
         }
     }
 
+    /**
+     *Prints the DFA to the standard output using the same format as the input automaton.
+     */
+    public void printOutputDFA() {
+        System.out.println(initialState);
+
+        for (String state : states) {
+            for (String symbol : alphabet) {
+                Map<String, String> transitionKey = new HashMap<>();
+                transitionKey.put(state, symbol);
+                String nextState = transitionFunction.get(transitionKey);
+                if(nextState != null){
+                    System.out.println(symbol + "," + state + "->" + nextState);
+                }
+            }
+        }
+        acceptStates.forEach(System.out::println);
+    }
 
     /**
      * Retrieves a list of rejecting states in the DFA.
